@@ -1,0 +1,51 @@
+C51 COMPILER V9.06   REGISTERIO                                                            04/01/2018 20:01:20 PAGE 1   
+
+
+C51 COMPILER V9.06, COMPILATION OF MODULE REGISTERIO
+OBJECT MODULE PLACED IN registerio.obj
+COMPILER INVOKED BY: E:\MCU_development\keil_C51\C51\BIN\C51.EXE src\registerio.c LARGE BROWSE DEBUG OBJECTEXTEND PRINT(
+                    -.\registerio.lst) OBJECT(registerio.obj)
+
+line level    source
+
+   1          
+   2          #include "config.h"
+   3          
+   4          #define LD_INDEX_PORT           (*((volatile unsigned char xdata*)(0x8100))) 
+   5          #define LD_DATA_PORT            (*((volatile unsigned char xdata*)(0x8000))) 
+   6          
+   7          
+   8          //评估板上 MCU的P2.0 连接到 LD芯片的A0
+   9          //         MCU的P2.1 连接到 LD芯片的CSB
+  10          //         MCU的RD、WR 连接 LD芯片的RD、WR (xdata 读写时自动产生低信号)
+  11          //
+  12          //0x8100的二进制是10000001 00000000             CSB=0 A0=1
+  13          //                 ^     ^
+  14          //0x8000的二进制是10000000 00000000             CSB=0 A0=0
+  15          //                 ^     ^              
+  16          void LD_WriteReg( unsigned char address, unsigned char dataout )
+  17          {
+  18   1              LD_INDEX_PORT  = address;         
+  19   1              LD_DATA_PORT = dataout;          
+  20   1      }
+  21          
+  22          unsigned char LD_ReadReg( unsigned char address )
+  23          {
+  24   1              LD_INDEX_PORT = address;         
+  25   1              return (unsigned char)LD_DATA_PORT;     
+  26   1      }
+  27          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     22    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

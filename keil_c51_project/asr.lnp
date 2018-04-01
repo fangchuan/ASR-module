@@ -1,0 +1,7 @@
+"STARTUP.obj",
+"ld3320driver.obj",
+"main.obj",
+"registerio.obj",
+"usart.obj" 
+TO "asr" 
+RAMSIZE(256) 

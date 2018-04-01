@@ -1,0 +1,398 @@
+C51 COMPILER V9.06   LD3320DRIVER                                                          04/01/2018 20:01:20 PAGE 1   
+
+
+C51 COMPILER V9.06, COMPILATION OF MODULE LD3320DRIVER
+OBJECT MODULE PLACED IN ld3320driver.obj
+COMPILER INVOKED BY: E:\MCU_development\keil_C51\C51\BIN\C51.EXE src\ld3320driver.c LARGE BROWSE DEBUG OBJECTEXTEND PRIN
+                    -T(.\ld3320driver.lst) OBJECT(ld3320driver.obj)
+
+line level    source
+
+   1          
+   2          #include "config.h"
+   3          
+   4          extern void  delay(unsigned long uldata);
+   5          extern uint8_t idata nAsrStatus;
+   6          uint8_t idata ucRegVal;
+   7          
+   8          
+   9          void ProcessInt0(void);
+  10          
+  11          
+  12          volatile uint8_t  sRecog[VOCIE_MAX_NUMBER][VOCIE_LENGTH] = {
+  13                                                                                  "a bo luo",\            
+  14                                                                                  "ji qi ren",\
+  15                                                                                   "qian jin",\
+  16                                                                                   "hou tui",\
+  17                                                                                   "zuo zhuan",\
+  18                                                                                   "you zhuan",\
+  19                                                                                   "ting zhi",\
+  20                                                                                   "jia su", \
+  21                                                                                   "jian su", \
+  22                                                                                   "kai deng",\
+  23                                                                                   "guan deng", \
+  24                                                                                   "he jiu", \
+  25                                                                                   "he he da", \
+  26                                                                                   "dian nao", \
+  27                                                                                   "zhu ban", \
+  28                                                                                   "nei cun tiao", \
+  29                                                                                   "ying pan", \
+  30                                                                                   "kai pao", \
+  31                                                                                   "da fei ji", \
+  32                                                                                   "he jiu", \
+  33                                                                                   "zhong xing", \
+  34                                                                                   "wei wei wei", \
+  35                                                                                   "ni hao"
+  36                                                                          };
+  37          uint8_t  g_indexsBuffer[VOCIE_MAX_NUMBER] = {
+  38                                                                  INDEX_APOLLO,\
+  39                                                                  INDEX_ROBOT,\
+  40                                                                  INDEX_FORWARD,\
+  41                                                                  INDEX_BACKWARD,\
+  42                                                                  INDEX_LEFT,\
+  43                                                                  INDEX_RIGHT,\
+  44                                                                  INDEX_STOP, \
+  45                                                                  INDEX_SPEED_UP,\
+  46                                                                  INDEX_SPEED_DOWN, \
+  47                                                                  INDEX_TURN_ON, \
+  48                                                                  INDEX_TURN_OFF, \
+  49                                                                  INDEX_11, \
+  50                                                                  INDEX_12, \
+  51                                                                  INDEX_13, \
+  52                                                                  INDEX_14, \
+  53                                                                  INDEX_15, \
+  54                                                                  INDEX_16, \
+C51 COMPILER V9.06   LD3320DRIVER                                                          04/01/2018 20:01:20 PAGE 2   
+
+  55                                                                  INDEX_17, \
+  56                                                                  INDEX_18, \
+  57                                                                  INDEX_19, \
+  58                                                                  INDEX_20, \
+  59                                                                  INDEX_21,\
+  60                                                                  INDEX_22, \
+  61                                                                  INDEX_23, \
+  62                                                                  INDEX_24, \
+  63                                                                  INDEX_25, \
+  64                                                                  INDEX_26, \
+  65                                                                  INDEX_27, \
+  66                                                                  INDEX_28, \
+  67                                                                  INDEX_29, \
+  68                                                                  INDEX_30, \
+  69                                                                  INDEX_31, \
+  70                                                                  INDEX_32, \
+  71                                                                  INDEX_33, \
+  72                                                                  INDEX_34
+  73                                                           };     
+  74          
+  75          /************************************************************************
+  76          功能描述：       复位LD模块
+  77          入口参数：       none
+  78          返 回 值：       none
+  79          其他说明：       none
+  80          **************************************************************************/
+  81          void LD3320Reset()
+  82          {
+  83   1              RSTB=1;
+  84   1              delay(5);
+  85   1              RSTB=0;
+  86   1              delay(5);
+  87   1              RSTB=1;
+  88   1      
+  89   1              delay(5);
+  90   1              CSB=0;
+  91   1              delay(5);
+  92   1              CSB=1;
+  93   1              delay(5);
+  94   1      }
+  95          /************************************************************************
+  96          功能描述： LD模块命令初始化
+  97          入口参数： none
+  98          返 回 值： none
+  99          其他说明： 该函数为出厂配置，一般不需要修改；
+ 100                                                   有兴趣的客户可对照开发手册根据需要自行修改。
+ 101          **************************************************************************/
+ 102          void LD3320CommonInit()
+ 103          {
+ 104   1              LD_ReadReg(0x06);  
+ 105   1              LD_WriteReg(0x17, 0x35); 
+ 106   1              delay(10);
+ 107   1              LD_ReadReg(0x06);  
+ 108   1      
+ 109   1              LD_WriteReg(0x89, 0x03);  
+ 110   1              delay(5);
+ 111   1              LD_WriteReg(0xCF, 0x43);   
+ 112   1              delay(5);
+ 113   1              LD_WriteReg(0xCB, 0x02);
+ 114   1              
+ 115   1              /*PLL setting*/
+ 116   1              LD_WriteReg(0x11, LD_PLL_11);       
+C51 COMPILER V9.06   LD3320DRIVER                                                          04/01/2018 20:01:20 PAGE 3   
+
+ 117   1      
+ 118   1              LD_WriteReg(0x1E,0x00);
+ 119   1              LD_WriteReg(0x19, LD_PLL_ASR_19); 
+ 120   1              LD_WriteReg(0x1B, LD_PLL_ASR_1B);               
+ 121   1              LD_WriteReg(0x1D, LD_PLL_ASR_1D);
+ 122   1              delay(10);
+ 123   1              
+ 124   1          LD_WriteReg(0xCD, 0x04);
+ 125   1      //      LD_WriteReg(0x17, 0x4c); 
+ 126   1              delay(5);
+ 127   1              LD_WriteReg(0xB9, 0x00);
+ 128   1              LD_WriteReg(0xCF, 0x4F); 
+ 129   1              LD_WriteReg(0x6F, 0xFF); 
+ 130   1      }
+ 131          
+ 132          /************************************************************************
+ 133          功能描述：       LD模块 ASR功能初始化
+ 134          入口参数：       none
+ 135          返 回 值：       none
+ 136          其他说明：       该函数为出厂配置，一般不需要修改；
+ 137                                                   有兴趣的客户可对照开发手册根据需要自行修改。
+ 138          **************************************************************************/
+ 139          void LD3320ASRInit()
+ 140          {
+ 141   1              LD3320CommonInit();
+ 142   1              LD_WriteReg(0xBD, 0x00);
+ 143   1              LD_WriteReg(0x17, 0x48);
+ 144   1              delay( 10 );
+ 145   1              LD_WriteReg(0x3C, 0x80);    
+ 146   1              LD_WriteReg(0x3E, 0x07);
+ 147   1              LD_WriteReg(0x38, 0xff);    
+ 148   1              LD_WriteReg(0x3A, 0x07);
+ 149   1        LD_WriteReg(0x40, 0);          
+ 150   1              LD_WriteReg(0x42, 8);
+ 151   1              LD_WriteReg(0x44, 0);    
+ 152   1              LD_WriteReg(0x46, 8); 
+ 153   1              delay( 1 );
+ 154   1      }
+ 155          
+ 156          /************************************************************************
+ 157          功能描述：      中断处理函数
+ 158          入口参数：       none
+ 159          返 回 值：       none
+ 160          其他说明：      当LD模块接收到音频信号时，将进入该函数，
+ 161                                                          判断识别是否有结果，如果没有从新配置寄
+ 162                      存器准备下一次的识别。
+ 163          **************************************************************************/
+ 164          void ProcessInt0(void)
+ 165          {
+ 166   1              uint8_t nAsrResCount=0;
+ 167   1      
+ 168   1              EX0=0;
+ 169   1              ucRegVal = LD_ReadReg(0x2B);
+ 170   1              LD_WriteReg(0x29,0) ;
+ 171   1              LD_WriteReg(0x02,0) ;
+ 172   1              if((ucRegVal & 0x10) &&
+ 173   1                      LD_ReadReg(0xb2)==0x21 && 
+ 174   1                      LD_ReadReg(0xbf)==0x35)                 /*识别成功*/
+ 175   1              {       
+ 176   2                      nAsrResCount = LD_ReadReg(0xba);
+ 177   2                      if(nAsrResCount>0 && nAsrResCount<=4) 
+ 178   2                      {
+C51 COMPILER V9.06   LD3320DRIVER                                                          04/01/2018 20:01:20 PAGE 4   
+
+ 179   3                              nAsrStatus=LD_ASR_FOUND_OK;
+ 180   3                      }
+ 181   2                      else
+ 182   2                  {
+ 183   3                              nAsrStatus=LD_ASR_FOUND_NONE;
+ 184   3                      }       
+ 185   2              }                                                                                                                        /*没有识别结果*/
+ 186   1              else
+ 187   1              {        
+ 188   2                      nAsrStatus=LD_ASR_FOUND_NONE;
+ 189   2              }
+ 190   1                      
+ 191   1        LD_WriteReg(0x2b, 0);
+ 192   1        LD_WriteReg(0x1C,0);/*写0:ADC不可用*/
+ 193   1      
+ 194   1              LD_WriteReg(0x29,0) ;
+ 195   1              LD_WriteReg(0x02,0) ;
+ 196   1              LD_WriteReg(0x2B,  0);
+ 197   1              LD_WriteReg(0xBA, 0);   
+ 198   1              LD_WriteReg(0xBC,0);    
+ 199   1              LD_WriteReg(0x08,1);     /*清除FIFO_DATA*/
+ 200   1              LD_WriteReg(0x08,0);    /*清除FIFO_DATA后 再次写0*/
+ 201   1      
+ 202   1      
+ 203   1              EX0=1;
+ 204   1      }
+ 205          
+ 206          /************************************************************************
+ 207          功能描述：      运行ASR识别流程
+ 208          入口参数：      none
+ 209          返 回 值：  asrflag：1->启动成功， 0—>启动失败
+ 210          其他说明：      识别顺序如下:
+ 211                                                          1、runASR()函数实现了一次完整的ASR语音识别流程
+ 212                                                          2、LD3320ASRInit() 函数实现了ASR初始化
+ 213                                                          3、LD3320ASRAddCommand() 函数实现了添加关键词语到LD3320芯片中
+ 214                                                          4、LD3320ASRStart()     函数启动了一次ASR语音识别流程                                   
+ 215                                                          任何一次ASR识别流程，都需要按照这个顺序，从初始化开始
+ 216          **************************************************************************/
+ 217          uint8_t runASR(void)
+ 218          {
+ 219   1              uint8_t i=0;
+ 220   1              uint8_t asrflag=0;
+ 221   1              for (i=0; i<5; i++)                     //      防止由于硬件原因导致LD3320芯片工作不正常，所以一共尝试5次启动ASR识别流程
+ 222   1              {
+ 223   2                      LD3320ASRInit();
+ 224   2                      delay(50);
+ 225   2                      if (LD3320ASRAddCommand()==0)
+ 226   2                      {
+ 227   3                              LD3320Reset();                  //      LD3320芯片内部出现不正常，立即重启LD3320芯片
+ 228   3                              delay(50);                      //      并从初始化开始重新ASR识别流程
+ 229   3                              continue;
+ 230   3                      }
+ 231   2                      delay(10);
+ 232   2                      if (LD3320ASRStart() == 0)
+ 233   2                      {
+ 234   3                              LD3320Reset();                  //      LD3320芯片内部出现不正常，立即重启LD3320芯片
+ 235   3                              delay(50);                      //      并从初始化开始重新ASR识别流程
+ 236   3                              continue;
+ 237   3                      }
+ 238   2                      asrflag=1;
+ 239   2                      break;                                  //      ASR流程启动成功，退出当前for循环。开始等待LD3320送出的中断信号
+ 240   2              }
+C51 COMPILER V9.06   LD3320DRIVER                                                          04/01/2018 20:01:20 PAGE 5   
+
+ 241   1      
+ 242   1              return asrflag;
+ 243   1      }
+ 244          /************************************************************************
+ 245          功能描述：  检测LD模块是否空闲
+ 246          入口参数：      none
+ 247          返 回 值：      flag：1-> 空闲
+ 248          其他说明：      none
+ 249          **************************************************************************/
+ 250          uint8_t LD3320CheckStatu()
+ 251          {
+ 252   1              uint8_t j;
+ 253   1              uint8_t flag = 0;
+ 254   1              for (j=0; j<10; j++)
+ 255   1              {
+ 256   2                      if (LD_ReadReg(0xb2) == 0x21)
+ 257   2                      {
+ 258   3                              flag = 1;
+ 259   3                              break;
+ 260   3                      }
+ 261   2                      delay(10);              
+ 262   2              }
+ 263   1              return flag;
+ 264   1      }
+ 265          
+ 266          /************************************************************************
+ 267          功能描述：      运行ASR
+ 268          入口参数：      none
+ 269          返 回 值：      1：启动成功
+ 270          其他说明：      none
+ 271          **************************************************************************/
+ 272          uint8_t LD3320ASRStart()
+ 273          {
+ 274   1              EX0=0;
+ 275   1              LD_WriteReg(0x35, MIC_VOL);
+ 276   1              LD_WriteReg(0x1C, 0x09);
+ 277   1              LD_WriteReg(0xBD, 0x20);
+ 278   1              LD_WriteReg(0x08, 0x01);
+ 279   1              delay( 1 );
+ 280   1              LD_WriteReg(0x08, 0x00);
+ 281   1              delay( 1 );
+ 282   1      
+ 283   1              if(LD3320CheckStatu() == 0)
+ 284   1              {
+ 285   2                      return 0;
+ 286   2              }
+ 287   1      //      LD_WriteReg(0xB6, 0xa); //识别时间       1S
+ 288   1      //      LD_WriteReg(0xB5, 0x1E); //背景音段时间 300ms
+ 289   1              LD_WriteReg(0xB8, 10); //一次语音识别的周期：10S
+ 290   1      
+ 291   1      //      LD_WriteReg(0x1C, 0x07); //配置双通道音频信号做为输入信号
+ 292   1              LD_WriteReg(0x1C, 0x0b); //配置麦克风做为输入信号
+ 293   1      
+ 294   1      
+ 295   1              LD_WriteReg(0xB2, 0xff);
+ 296   1              delay( 1);      
+ 297   1              LD_WriteReg(0x37, 0x06);
+ 298   1              delay( 1 );
+ 299   1          LD_WriteReg(0x37, 0x06);
+ 300   1                      delay( 5 );
+ 301   1              LD_WriteReg(0x29, 0x10);
+ 302   1              
+C51 COMPILER V9.06   LD3320DRIVER                                                          04/01/2018 20:01:20 PAGE 6   
+
+ 303   1              LD_WriteReg(0xBD, 0x00);
+ 304   1              EX0=1;
+ 305   1              return 1;
+ 306   1      }
+ 307          /************************************************************************
+ 308          功能描述： 向LD模块添加关键词
+ 309          入口参数： none
+ 310          返 回 值： flag：1->添加成功
+ 311          其他说明： 用户修改.
+ 312                                                   1、根据如下格式添加拼音关键词，同时注意修改sRecog 和g_indexsBuffer 数组的长度
+ 313                                                   和对应变了k的循环置。拼音串和识别码是一一对应的。
+ 314                                                   2、开发者可以学习"语音识别芯片LD3320高阶秘籍.pdf"中
+ 315                     关于垃圾词语吸收错误的用法，来提供识别效果。
+ 316                                                   3、”xiao jie “ 为口令，故在每次识别时，必须先发一级口令“小捷”
+ 317          **************************************************************************/
+ 318          uint8_t LD3320ASRAddCommand()
+ 319          {
+ 320   1                      uint8_t k, flag;
+ 321   1                      uint8_t nAsrAddLength;
+ 322   1                      
+ 323   1                      flag = 1;
+ 324   1                      for (k=0; k<VOCIE_MAX_NUMBER; k++)
+ 325   1                      {
+ 326   2                                      
+ 327   2                              if(LD3320CheckStatu() == 0)
+ 328   2                              {
+ 329   3                                      flag = 0;
+ 330   3                                      break;
+ 331   3                              }
+ 332   2                              
+ 333   2                              LD_WriteReg(0xc1, g_indexsBuffer[k] );
+ 334   2                              LD_WriteReg(0xc3, 0 );
+ 335   2                              LD_WriteReg(0x08, 0x04);
+ 336   2                              delay(1);
+ 337   2                              LD_WriteReg(0x08, 0x00);
+ 338   2                              delay(1);
+ 339   2              
+ 340   2                              for (nAsrAddLength=0; nAsrAddLength<VOCIE_LENGTH; nAsrAddLength++)
+ 341   2                              {
+ 342   3                                      if (sRecog[k][nAsrAddLength] == 0)
+ 343   3                                              break;
+ 344   3                                      LD_WriteReg(0x5, sRecog[k][nAsrAddLength]);
+ 345   3                              }
+ 346   2                              LD_WriteReg(0xb9, nAsrAddLength);
+ 347   2                              LD_WriteReg(0xb2, 0xff);
+ 348   2                              LD_WriteReg(0x37, 0x04);
+ 349   2                      }
+ 350   1      
+ 351   1                  return flag;
+ 352   1      }
+ 353          /************************************************************************
+ 354          功能描述：      获取识别结果
+ 355          入口参数：      none
+ 356          返 回 值：      LD_ReadReg(0xc5 )；  读取内部寄存器返回识别码。
+ 357          其他说明：      none
+ 358          **************************************************************************/
+ 359          uint8_t LD3320GetResult()
+ 360          {               
+ 361   1              return LD_ReadReg(0xc5 );
+ 362   1      }
+
+
+C51 COMPILER V9.06   LD3320DRIVER                                                          04/01/2018 20:01:20 PAGE 7   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    997    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    735       8
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =      1    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

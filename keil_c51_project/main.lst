@@ -1,0 +1,356 @@
+C51 COMPILER V9.06   MAIN                                                                  04/01/2018 20:29:49 PAGE 1   
+
+
+C51 COMPILER V9.06, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.obj
+COMPILER INVOKED BY: E:\MCU_development\keil_C51\C51\BIN\C51.EXE src\main.c LARGE BROWSE DEBUG OBJECTEXTEND PRINT(.\main
+                    -.lst) OBJECT(main.obj)
+
+line level    source
+
+   1          #include "config.h"
+   2          #include "string.h"
+   3          
+   4          /************************************************************************************/
+   5          //      nAsrStatus 用来在main主程序中表示程序运行的状态，不是LD3320芯片内部的状态寄存器
+   6          //      LD_ASR_IDLE:            表示没有在作ASR识别
+   7          //      LD_ASR_RUNING：         表示LD3320正在作ASR识别中
+   8          //      LD_ASR_FOUND_OK:                表示一次识别流程结束后，有一个识别结果
+   9          //      LD_ASR_FOUND_NONE:      表示一次识别流程结束后，没有识别结果
+  10          //      LD_ASR_ERROR:           表示一次识别流程中LD3320芯片内部出现不正确的状态
+  11          /***********************************************************************************/
+  12          
+  13          void mcuInit(); 
+  14          void ProcessInt0(); //识别处理函数
+  15          void  delay(unsigned long uldata);
+  16          void    userHandle(uint8_t dat);//用户执行操作函数
+  17          void Delay200ms();
+  18          void ledTest(void);//单片机工作指示
+  19          
+  20          sbit LED=P4^2;//信号指示灯
+  21          uint8_t idata nAsrStatus=0;     
+  22          
+  23          extern volatile uint8_t  sRecog[VOCIE_MAX_NUMBER][VOCIE_LENGTH];
+  24          extern uint8_t   rxBuffer[20];
+  25          extern uint8_t   rxFlag;
+  26          /***********************************************************
+  27          * 名    称： void  main(void)
+  28          * 功    能： 主函数     程序入口
+  29          * 入口参数：  
+  30          * 出口参数：
+  31          * 说    明：                                     
+  32          * 调用方法： 
+  33          **********************************************************/ 
+  34          void  main(void)
+  35          {
+  36   1          uint8_t idata nAsrRes;
+  37   1          uint8_t i=0;
+  38   1          ledTest();
+  39   1          mcuInit();
+  40   1          LD3320Reset();
+  41   1          uartInit(); /*串口初始化*/
+  42   1          nAsrStatus = LD_ASR_IDLE;           //      初始状态：没有在作ASR
+  43   1      
+  44   1          while(1)
+  45   1          {
+  46   2              switch(nAsrStatus)
+  47   2              {
+  48   3              case LD_ASR_RUNING:
+  49   3                  break;
+  50   3              case LD_ASR_ERROR:
+  51   3                  nAsrStatus = LD_ASR_IDLE;
+  52   3                  break;
+  53   3              case LD_ASR_IDLE:
+  54   3              {
+C51 COMPILER V9.06   MAIN                                                                  04/01/2018 20:29:49 PAGE 2   
+
+  55   4                  nAsrStatus=LD_ASR_RUNING;
+  56   4                  if (runASR()==0)    /*      启动一次ASR识别流程：ASR初始化，ASR添加关键词语，启动ASR运算*/
+  57   4                  {
+  58   5                      nAsrStatus = LD_ASR_ERROR;
+  59   5                  }
+  60   4                  break;
+  61   4              }
+  62   3              case LD_ASR_FOUND_OK: /*        一次ASR识别流程结束，去取ASR识别结果*/
+  63   3              {
+  64   4                  nAsrRes = LD3320GetResult();                /*获取结果*/
+  65   4                  userHandle(nAsrRes);//用户执行函数
+  66   4                  nAsrStatus = LD_ASR_IDLE;
+  67   4                  break;
+  68   4              }
+  69   3              case LD_ASR_FOUND_NONE:
+  70   3              default:
+  71   3              {
+  72   4      //            printCom("NONE\r\n");
+  73   4                  nAsrStatus = LD_ASR_IDLE;
+  74   4                  break;
+  75   4              }
+  76   3              }// switch
+  77   2      
+  78   2              if(rxFlag == 1)
+  79   2              {
+  80   3                  uint8_t returnValue;
+  81   3                  uint8_t index = rxBuffer[0]-0x30;
+  82   3                  uint8_t command[VOCIE_LENGTH] = {0};
+  83   3                  rxFlag= 0 ;
+  84   3                  printCom(rxBuffer+1);
+  85   3                  memcpy(command, rxBuffer+1, 19);
+  86   3                  memcpy(sRecog[index], command , VOCIE_LENGTH);
+  87   3                  memset(rxBuffer, 0, 20);
+  88   3                  returnValue = runASR();
+  89   3                  while(!returnValue)
+  90   3                  {
+  91   4                      returnValue = LD3320ASRAddCommand();
+  92   4                  }
+  93   3              }
+  94   2          }// while
+  95   1      
+  96   1      }
+  97          /***********************************************************
+  98          * 名    称：     LED灯测试
+  99          * 功    能： 单片机是否工作指示
+ 100          * 入口参数： 无 
+ 101          * 出口参数：无
+ 102          * 说    明：                                     
+ 103          **********************************************************/
+ 104          void ledTest(void)
+ 105          {
+ 106   1          LED=~ LED;
+ 107   1          Delay200ms();
+ 108   1          LED=~ LED;
+ 109   1          Delay200ms();
+ 110   1          LED=~ LED;
+ 111   1          Delay200ms();
+ 112   1          LED=~ LED;
+ 113   1          Delay200ms();
+ 114   1          LED=~ LED;
+ 115   1          Delay200ms();
+ 116   1          LED=~ LED;
+C51 COMPILER V9.06   MAIN                                                                  04/01/2018 20:29:49 PAGE 3   
+
+ 117   1      }
+ 118          /***********************************************************
+ 119          * 名    称： void mcuInit()
+ 120          * 功    能： 单片机初始化
+ 121          * 入口参数：  
+ 122          * 出口参数：
+ 123          * 说    明：                                     
+ 124          * 调用方法： 
+ 125          **********************************************************/ 
+ 126          void mcuInit()
+ 127          {
+ 128   1          P0 = 0xff;
+ 129   1          P1 = 0xff;
+ 130   1          P2 = 0xff;
+ 131   1          P3 = 0xff;
+ 132   1          P4 = 0xff;
+ 133   1      
+ 134   1          P1M0=0XFF;  //P1端口设置为推挽输出功能，即提高IO口驱动能力，从驱动继电器模块工作
+ 135   1          P1M1=0X00;
+ 136   1      
+ 137   1          LD_MODE = 0;                //      设置MD管脚为低，并行模式读写
+ 138   1          IE0=1;
+ 139   1          EX0=1;
+ 140   1          EA=1;
+ 141   1      }
+ 142          /***********************************************************
+ 143          * 名    称：    延时函数
+ 144          * 功    能：
+ 145          * 入口参数：  
+ 146          * 出口参数：
+ 147          * 说    明：                                     
+ 148          * 调用方法： 
+ 149          **********************************************************/ 
+ 150          void Delay200us()               //@22.1184MHz
+ 151          {
+ 152   1          unsigned char i, j;
+ 153   1          _nop_();
+ 154   1          _nop_();
+ 155   1          i = 5;
+ 156   1          j = 73;
+ 157   1          do
+ 158   1          {
+ 159   2              while (--j);
+ 160   2          } while (--i);
+ 161   1      }
+ 162          
+ 163          void  delay(unsigned long uldata)
+ 164          {
+ 165   1          unsigned int j  =  0;
+ 166   1          unsigned int g  =  0;
+ 167   1          while(uldata--)
+ 168   1              Delay200us();
+ 169   1      }
+ 170          
+ 171          void Delay200ms()               //@22.1184MHz
+ 172          {
+ 173   1          unsigned char i, j, k;
+ 174   1      
+ 175   1          i = 17;
+ 176   1          j = 208;
+ 177   1          k = 27;
+ 178   1          do
+C51 COMPILER V9.06   MAIN                                                                  04/01/2018 20:29:49 PAGE 4   
+
+ 179   1          {
+ 180   2              do
+ 181   2              {
+ 182   3                  while (--k);
+ 183   3              } while (--j);
+ 184   2          } while (--i);
+ 185   1      }
+ 186          /***********************************************************
+ 187          * 名    称： 中断处理函数
+ 188          * 功    能：
+ 189          * 入口参数：  
+ 190          * 出口参数：
+ 191          * 说    明：                                     
+ 192          * 调用方法： 
+ 193          **********************************************************/ 
+ 194          void ExtInt0Handler(void) interrupt 0  
+ 195          {       
+ 196   1          ProcessInt0();                              /*      LD3320 送出中断信号，包括ASR和播放MP3的中断，需要在中断处理函数中分别处理*/
+ 197   1      }
+ 198          /***********************************************************
+ 199          * 名    称：用户执行函数 
+ 200          * 功    能：识别成功后，执行动作可在此进行修改 
+ 201          * 入口参数： 无 
+ 202          * 出口参数：无
+ 203          * 说    明：                                     
+ 204          **********************************************************/
+ 205          void    userHandle(uint8_t dat)
+ 206          {
+ 207   1      
+ 208   1          switch(dat)            /*对结果执行相关操作,客户修改*/
+ 209   1          {
+ 210   2          case INDEX_APOLLO:
+ 211   2      
+ 212   2              printCom("0\r\n"); /*text.....*/
+ 213   2              break;
+ 214   2          case INDEX_ROBOT:
+ 215   2      
+ 216   2              printCom("1\r\n"); /*text.....*/
+ 217   2              break;
+ 218   2          case INDEX_FORWARD:
+ 219   2              printCom("2\r\n"); /*text.....*/
+ 220   2              break;
+ 221   2          case INDEX_BACKWARD:
+ 222   2              printCom("3\r\n"); /*text.....*/
+ 223   2              break;
+ 224   2          case INDEX_LEFT:
+ 225   2              printCom("4\r\n"); /*text.....*/
+ 226   2              break;
+ 227   2          case INDEX_RIGHT:
+ 228   2              printCom("5\r\n"); /*text.....*/
+ 229   2              break;
+ 230   2          case INDEX_STOP:
+ 231   2              printCom("6\r\n"); /*text.....*/
+ 232   2              break;
+ 233   2          case INDEX_SPEED_UP:
+ 234   2              printCom("7\r\n"); /*text.....*/
+ 235   2              break;
+ 236   2          case INDEX_SPEED_DOWN:
+ 237   2              printCom("8\r\n"); /*text.....*/
+ 238   2              break;
+ 239   2          case INDEX_TURN_ON:
+ 240   2              printCom("9\r\n"); /*text.....*/
+C51 COMPILER V9.06   MAIN                                                                  04/01/2018 20:29:49 PAGE 5   
+
+ 241   2              break;
+ 242   2          case INDEX_TURN_OFF:
+ 243   2              printCom("10\r\n"); /*text.....*/
+ 244   2              break;
+ 245   2          case INDEX_11:
+ 246   2              printCom("11\r\n"); /*text.....*/
+ 247   2              break;
+ 248   2          case INDEX_12:
+ 249   2              printCom("12\r\n"); /*text.....*/
+ 250   2              break;
+ 251   2          case INDEX_13:
+ 252   2              printCom("13\r\n"); /*text.....*/
+ 253   2              break;
+ 254   2          case INDEX_14:
+ 255   2              printCom("14\r\n"); /*text.....*/
+ 256   2              break;
+ 257   2          case INDEX_15:
+ 258   2              printCom("15\r\n"); /*text.....*/
+ 259   2              break;
+ 260   2          case INDEX_16:
+ 261   2              printCom("16\r\n"); /*text.....*/
+ 262   2              break;
+ 263   2          case INDEX_17:
+ 264   2              printCom("17\r\n"); /*text.....*/
+ 265   2              break;
+ 266   2          case INDEX_18:
+ 267   2              printCom("18\r\n"); /*text.....*/
+ 268   2              break;
+ 269   2          case INDEX_19:
+ 270   2      
+ 271   2              printCom("19\r\n"); /*text.....*/
+ 272   2              break;
+ 273   2          case INDEX_20:
+ 274   2              printCom("20\r\n"); /*text.....*/
+ 275   2              break;
+ 276   2          case INDEX_21:
+ 277   2              printCom("21\r\n"); /*text.....*/
+ 278   2              break;
+ 279   2          case INDEX_22:
+ 280   2              printCom("22\r\n"); /*text.....*/
+ 281   2              break;
+ 282   2          case INDEX_23:
+ 283   2              printCom("23\r\n"); /*text.....*/
+ 284   2              break;
+ 285   2          case INDEX_24:
+ 286   2              printCom("24\r\n"); /*text.....*/
+ 287   2              break;
+ 288   2          case INDEX_25:
+ 289   2              printCom("25\r\n"); /*text.....*/
+ 290   2              break;
+ 291   2          case INDEX_26:
+ 292   2              printCom("26\r\n"); /*text.....*/
+ 293   2              break;
+ 294   2          case INDEX_27:
+ 295   2              printCom("27\r\n"); /*text.....*/
+ 296   2              break;
+ 297   2          case INDEX_28:
+ 298   2              printCom("28\r\n"); /*text.....*/
+ 299   2              break;
+ 300   2          case INDEX_29:
+ 301   2              printCom("29\r\n"); /*text.....*/
+ 302   2              break;
+C51 COMPILER V9.06   MAIN                                                                  04/01/2018 20:29:49 PAGE 6   
+
+ 303   2          case INDEX_30:
+ 304   2              printCom("30\r\n"); /*text.....*/
+ 305   2              break;
+ 306   2          case INDEX_31:
+ 307   2              printCom("31\r\n"); /*text.....*/
+ 308   2              break;
+ 309   2          case INDEX_32:
+ 310   2              printCom("32\r\n"); /*text.....*/
+ 311   2              break;
+ 312   2          case INDEX_33:
+ 313   2              printCom("33\r\n"); /*text.....*/
+ 314   2              break;
+ 315   2          case INDEX_34:
+ 316   2              printCom("34\r\n"); /*text.....*/
+ 317   2              break;
+ 318   2      
+ 319   2          default:printCom("NONE\r\n"); /*text.....*/
+ 320   2              break;
+ 321   2          }
+ 322   1      }        
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    823    ----
+   CONSTANT SIZE    =    192    ----
+   XDATA SIZE       =   ----      31
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =      1       1
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
