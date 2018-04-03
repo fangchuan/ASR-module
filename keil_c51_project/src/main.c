@@ -69,7 +69,7 @@ void  main(void)
         case LD_ASR_FOUND_NONE:
         default:
         {
-//            printCom("NONE\r\n");
+            //printCom("NONE\r\n");
             nAsrStatus = LD_ASR_IDLE;
             break;
         }
@@ -81,7 +81,7 @@ void  main(void)
             uint8_t index = rxBuffer[0]-0x30;
             uint8_t command[VOCIE_LENGTH] = {0};
             rxFlag= 0 ;
-            printCom(rxBuffer+1);
+            //printCom(rxBuffer+1);
             memcpy(command, rxBuffer+1, 19);
             memcpy(sRecog[index], command , VOCIE_LENGTH);
             memset(rxBuffer, 0, 20);
