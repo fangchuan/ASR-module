@@ -1,4 +1,4 @@
-C51 COMPILER V9.06   MAIN                                                                  04/01/2018 20:29:49 PAGE 1   
+C51 COMPILER V9.06   MAIN                                                                  04/03/2018 20:42:33 PAGE 1   
 
 
 C51 COMPILER V9.06, COMPILATION OF MODULE MAIN
@@ -62,7 +62,7 @@ line level    source
   52   3                  break;
   53   3              case LD_ASR_IDLE:
   54   3              {
-C51 COMPILER V9.06   MAIN                                                                  04/01/2018 20:29:49 PAGE 2   
+C51 COMPILER V9.06   MAIN                                                                  04/03/2018 20:42:33 PAGE 2   
 
   55   4                  nAsrStatus=LD_ASR_RUNING;
   56   4                  if (runASR()==0)    /*      启动一次ASR识别流程：ASR初始化，ASR添加关键词语，启动ASR运算*/
@@ -81,7 +81,7 @@ line level    source
   69   3              case LD_ASR_FOUND_NONE:
   70   3              default:
   71   3              {
-  72   4      //            printCom("NONE\r\n");
+  72   4                  //printCom("NONE\r\n");
   73   4                  nAsrStatus = LD_ASR_IDLE;
   74   4                  break;
   75   4              }
@@ -93,7 +93,7 @@ line level    source
   81   3                  uint8_t index = rxBuffer[0]-0x30;
   82   3                  uint8_t command[VOCIE_LENGTH] = {0};
   83   3                  rxFlag= 0 ;
-  84   3                  printCom(rxBuffer+1);
+  84   3                  //printCom(rxBuffer+1);
   85   3                  memcpy(command, rxBuffer+1, 19);
   86   3                  memcpy(sRecog[index], command , VOCIE_LENGTH);
   87   3                  memset(rxBuffer, 0, 20);
@@ -126,7 +126,7 @@ line level    source
  114   1          LED=~ LED;
  115   1          Delay200ms();
  116   1          LED=~ LED;
-C51 COMPILER V9.06   MAIN                                                                  04/01/2018 20:29:49 PAGE 3   
+C51 COMPILER V9.06   MAIN                                                                  04/03/2018 20:42:33 PAGE 3   
 
  117   1      }
  118          /***********************************************************
@@ -190,7 +190,7 @@ line level    source
  176   1          j = 208;
  177   1          k = 27;
  178   1          do
-C51 COMPILER V9.06   MAIN                                                                  04/01/2018 20:29:49 PAGE 4   
+C51 COMPILER V9.06   MAIN                                                                  04/03/2018 20:42:33 PAGE 4   
 
  179   1          {
  180   2              do
@@ -254,7 +254,7 @@ line level    source
  238   2              break;
  239   2          case INDEX_TURN_ON:
  240   2              printCom("9\r\n"); /*text.....*/
-C51 COMPILER V9.06   MAIN                                                                  04/01/2018 20:29:49 PAGE 5   
+C51 COMPILER V9.06   MAIN                                                                  04/03/2018 20:42:33 PAGE 5   
 
  241   2              break;
  242   2          case INDEX_TURN_OFF:
@@ -318,7 +318,7 @@ line level    source
  300   2          case INDEX_29:
  301   2              printCom("29\r\n"); /*text.....*/
  302   2              break;
-C51 COMPILER V9.06   MAIN                                                                  04/01/2018 20:29:49 PAGE 6   
+C51 COMPILER V9.06   MAIN                                                                  04/03/2018 20:42:33 PAGE 6   
 
  303   2          case INDEX_30:
  304   2              printCom("30\r\n"); /*text.....*/
@@ -343,7 +343,7 @@ line level    source
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    823    ----
+   CODE SIZE        =    813    ----
    CONSTANT SIZE    =    192    ----
    XDATA SIZE       =   ----      31
    PDATA SIZE       =   ----    ----
